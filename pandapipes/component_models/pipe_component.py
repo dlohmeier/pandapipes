@@ -117,9 +117,11 @@ class Pipe(BranchWInternalsComponent):
             np.repeat(net[cls.table_name()][cls.active_identifier()].values, int_node_number)
         if not get_net_option(net, "transient") or get_net_option(net, "time_step") == 0:
             int_node_pit[:, TINIT_NODE] = vinterp(junction_pit[fj_nodes, TINIT_NODE],
-                                              junction_pit[tj_nodes, TINIT_NODE],
-                                              int_node_number)
-            int_node_pit[:, TINIT_OLD] = int_node_pit[:, TINIT_NODE]
+                                                  junction_pit[tj_nodes, TINIT_NODE],
+                                                  int_node_number)
+            int_node_pit[:, TINIT_OLD] = vinterp(junction_pit[fj_nodes, TINIT_OLD],
+                                                 junction_pit[tj_nodes, TINIT_OLD],
+                                                 int_node_number)
 
     @classmethod
     def create_pit_branch_entries(cls, net, branch_pit):
