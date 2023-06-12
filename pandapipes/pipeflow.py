@@ -118,7 +118,7 @@ def pipeflow(net, sol_vec=None, **kwargs):
     elif not calculate_hydraulics:
         raise UserWarning("No proper calculation mode chosen.")
 
-    extract_all_results(net)
+    extract_all_results(net, calculation_mode)
 
     # TODO: a really bad solution, should be passed in from outside!
     #if get_net_option(net, "transient"):
