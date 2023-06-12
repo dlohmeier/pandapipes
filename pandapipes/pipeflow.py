@@ -4,18 +4,20 @@
 
 import numpy as np
 from numpy import linalg
+from pandapower.auxiliary import ppException
+from scipy.sparse.linalg import spsolve
+
 from pandapipes.component_models.abstract_models import BranchComponent
-from pandapipes.idx_branch import ACTIVE as ACTIVE_BR, FROM_NODE, TO_NODE, FROM_NODE_T, \
+from pandapipes.idx_branch import FROM_NODE, TO_NODE, FROM_NODE_T, \
     TO_NODE_T, VINIT, T_OUT, VINIT_T, T_OUT_OLD
-from pandapipes.idx_node import PINIT, TINIT, TINIT_OLD, ACTIVE as ACTIVE_ND
+from pandapipes.idx_node import PINIT, TINIT, TINIT_OLD
 from pandapipes.pf.build_system_matrix import build_system_matrix
 from pandapipes.pf.derivative_calculation import calculate_derivatives_hydraulic
 from pandapipes.pf.pipeflow_setup import get_net_option, get_net_options, set_net_option, \
-    init_options, create_internal_results, write_internal_results, get_lookup, create_lookups,\
-    initialize_pit, check_connectivity, reduce_pit, set_user_pf_options, init_all_result_tables
+    init_options, create_internal_results, write_internal_results, get_lookup, initialize_pit, \
+    reduce_pit, set_user_pf_options, init_all_result_tables, \
+    identify_active_nodes_branches
 from pandapipes.pf.result_extraction import extract_all_results, extract_results_active_pit
-from pandapower.auxiliary import ppException
-from scipy.sparse.linalg import spsolve
 
 try:
     import pandaplan.core.pplog as logging
