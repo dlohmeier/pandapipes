@@ -87,37 +87,36 @@ def pipeflow(net, sol_vec=None, **kwargs):
 
     # TODO: This is not necessary in every time step, but we need the result! The result of the
     #       connectivity check is currently not saved anywhere!
-    if get_net_option(net, "check_connectivity"):
-        nodes_connected, branches_connected = check_connectivity(
-            net, branch_pit, node_pit, check_heat=calculate_heat)
-    else:
-        nodes_connected = node_pit[:, ACTIVE_ND].astype(bool)
-        branches_connected = branch_pit[:, ACTIVE_BR].astype(bool)
+    identify_active_nodes_branches(net, branch_pit, node_pit)
 
-    reduce_pit(net, node_pit, branch_pit, nodes_connected, branches_connected)
-
-    if calculation_mode == "heat" and not net.user_pf_options["hyd_flag"]:
-        raise UserWarning("Converged flag not set. Make sure that hydraulic calculation results "
-                          "are available.")
-    elif calculation_mode == "heat" and net.user_pf_options["hyd_flag"]:
-        net["_active_pit"]["node"][:, PINIT] = sol_vec[:len(node_pit)]
-        net["_active_pit"]["branch"][:, VINIT] = sol_vec[len(node_pit):]
+    if calculation_mode == "heat":
+        if not net.user_pf_options["hyd_flag"]:
+            raise UserWarning("Converged flag not set. Make sure that hydraulic calculation "
+                              "results are available.")
+        else:
+            net["_pit"]["node"][:, PINIT] = sol_vec[:len(node_pit)]
+            net["_pit"]["branch"][:, VINIT] = sol_vec[len(node_pit):]
 
     if calculate_hydraulics:
+        reduce_pit(net, node_pit, branch_pit, mode="hydraulics")
         converged, _ = hydraulics(net)
         if not converged:
             raise PipeflowNotConverged("The hydraulic calculation did not converge to a solution.")
+        extract_results_active_pit(net, mode="hydraulics")
 
     if calculate_heat:
+        node_pit, branch_pit = net["_pit"]["node"], net["_pit"]["branch"]
+        identify_active_nodes_branches(net, branch_pit, node_pit, False)
+        reduce_pit(net, node_pit, branch_pit, mode="heat_transfer")
         converged, _ = heat_transfer(net)
         if not converged:
             raise PipeflowNotConverged("The heat transfer calculation did not converge to a "
                                        "solution.")
+        extract_results_active_pit(net, mode="heat_transfer")
     elif not calculate_hydraulics:
         raise UserWarning("No proper calculation mode chosen.")
 
-    extract_results_active_pit(net, node_pit, branch_pit, nodes_connected, branches_connected)
-    extract_all_results(net, nodes_connected, branches_connected)
+    extract_all_results(net)
 
     # TODO: a really bad solution, should be passed in from outside!
     #if get_net_option(net, "transient"):
@@ -221,7 +220,7 @@ def heat_transfer(net):
         error_t_out.append(linalg.norm(delta_t_out) / (len(delta_t_out)))
 
         finalize_iteration(net, niter, error_t, error_t_out, residual_norm, nonlinear_method, tol_t,
-                           tol_t, tol_res, t_init_old, t_out_old, hydraulic_mode=True)
+                           tol_t, tol_res, t_init_old, t_out_old, hydraulic_mode=False)
         niter += 1
 
     node_pit[:, TINIT_OLD] = node_pit[:, TINIT]
@@ -251,7 +250,7 @@ def solve_hydraulics(net):
     branch_pit = net["_active_pit"]["branch"]
     node_pit = net["_active_pit"]["node"]
 
-    branch_lookups = get_lookup(net, "branch", "from_to_active")
+    branch_lookups = get_lookup(net, "branch", "from_to_active_hydraulics")
     for comp in net['component_list']:
         comp.adaption_before_derivatives_hydraulic(
             net, branch_pit, node_pit, branch_lookups, options)
@@ -290,7 +289,7 @@ def solve_temperature(net):
     options = net["_options"]
     branch_pit = net["_active_pit"]["branch"]
     node_pit = net["_active_pit"]["node"]
-    branch_lookups = get_lookup(net, "branch", "from_to_active")
+    branch_lookups = get_lookup(net, "branch", "from_to_active_heat_transfer")
 
     # Negative velocity values are turned to positive ones (including exchange of from_node and
     # to_node for temperature calculation
