@@ -7,10 +7,11 @@ from operator import itemgetter
 import numpy as np
 from numpy import dtype
 
+from pandapipes.component_models import get_std_type_lookup, get_component_array
 from pandapipes.component_models.abstract_models.branch_wzerolength_models import \
     BranchWZeroLengthComponent
 from pandapipes.component_models.junction_component import Junction
-from pandapipes.idx_branch import D, AREA, TL, Kv_max, ACTUAL_POS, STD_TYPE, FROM_NODE, TO_NODE, \
+from pandapipes.idx_branch import D, AREA, TL, Kv_max, ACTUAL_POS, FROM_NODE, TO_NODE, \
     RHO, LOSS_COEFFICIENT as LC, DESIRED_MV
 from pandapipes.idx_node import PINIT, PAMB
 from pandapipes.pf.pipeflow_setup import get_net_option
@@ -28,6 +29,10 @@ class DynamicValve(BranchWZeroLengthComponent):
     kwargs = None
     prev_act_pos = None
     time_step = 0
+
+    STD_TYPE = 0
+
+    internal_cols = 1
 
     @classmethod
     def from_to_node_cols(cls):
@@ -71,11 +76,6 @@ class DynamicValve(BranchWZeroLengthComponent):
         # in_active_pos = np.where(valve_pit[:, ACTUAL_POS] == 0)
         # vlv_status[in_active_pos] = 0
         # valve_pit[:, ACTIVE] = vlv_status
-
-        std_types_lookup = np.array(list(net.std_types[cls.table_name()].keys()))
-        std_type, pos = np.where(net[cls.table_name()]['std_type'].values
-                                 == std_types_lookup[:, np.newaxis])
-        valve_pit[pos, STD_TYPE] = std_type
 
     @classmethod
     def plant_dynamics(cls, dt, desired_mv, dyn_valve_tbl):
@@ -124,6 +124,28 @@ class DynamicValve(BranchWZeroLengthComponent):
         #
         # return actual_pos
 
+
+    @classmethod
+    def create_component_array(cls, net, component_pits):
+        """
+        Function which creates an internal array of the component in analogy to the pit, but with
+        component specific entries, that are not needed in the pit.
+
+        :param net: The pandapipes network
+        :type net: pandapipesNet
+        :param component_pits: dictionary of component specific arrays
+        :type component_pits: dict
+        :return:
+        :rtype:
+        """
+        tbl = net[cls.table_name()]
+        pump_array = np.zeros(shape=(len(tbl), cls.internal_cols), dtype=np.float64)
+        std_types_lookup = get_std_type_lookup(net, cls.table_name())
+        std_type, pos = np.where(net[cls.table_name()]['std_type'].values
+                                 == std_types_lookup[:, np.newaxis])
+        pump_array[pos, cls.STD_TYPE] = std_type
+        component_pits[cls.table_name()] = pump_array
+
     @classmethod
     def adaption_before_derivatives_hydraulic(cls, net, branch_pit, node_pit, idx_lookups, options):
         dt = net['_options']['dt']
@@ -131,8 +153,11 @@ class DynamicValve(BranchWZeroLengthComponent):
         dyn_valve_tbl = net[cls.table_name()]
         valve_pit = branch_pit[f:t, :]
         area = valve_pit[:, AREA]
-        idx = valve_pit[:, STD_TYPE].astype(int)
-        std_types = np.array(list(net.std_types['dynamic_valve'].keys()))[idx]
+
+        pump_array = get_component_array(net, cls.table_name())
+        idx = pump_array[:, cls.STD_TYPE].astype(np.int32)
+        std_types = get_std_type_lookup(net, cls.table_name())[idx]
+
         from_nodes = valve_pit[:, FROM_NODE].astype(np.int32)
         to_nodes = valve_pit[:, TO_NODE].astype(np.int32)
         p_from = node_pit[from_nodes, PAMB] + node_pit[from_nodes, PINIT]
