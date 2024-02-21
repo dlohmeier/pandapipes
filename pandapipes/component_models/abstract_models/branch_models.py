@@ -5,12 +5,15 @@
 import numpy as np
 
 from pandapipes.component_models.abstract_models.base_component import Component
+from pandapipes.idx_branch import VINIT, branch_cols
 from pandapipes.idx_branch import LENGTH, D, AREA, RHO, VINIT, ALPHA, QEXT, TEXT, branch_cols, \
     T_OUT, CP, VINIT_T, FROM_NODE_T, TL, JAC_DERIV_DT, JAC_DERIV_DT1, JAC_DERIV_DT_NODE, \
     LOAD_VEC_BRANCHES_T, LOAD_VEC_NODES_T
 from pandapipes.idx_branch import T_OUT_OLD
 from pandapipes.idx_node import TINIT as TINIT_NODE
 from pandapipes.pf.pipeflow_setup import get_table_number, get_lookup, get_net_option
+from pandapipes.pf.pipeflow_setup import get_table_number, get_lookup
+from pandapipes.idx_branch import T_OUT_OLD
 
 try:
     import pandaplan.core.pplog as logging
@@ -176,5 +179,5 @@ class BranchComponent(Component):
         raise NotImplementedError
 
     @classmethod
-    def extract_results(cls, net, options, branch_results, nodes_connected, branches_connected):
+    def extract_results(cls, net, options, branch_results, mode):
         raise NotImplementedError

@@ -6,13 +6,20 @@ import numpy as np
 from numpy import linalg
 from pandapipes.component_models.abstract_models import BranchComponent
 from pandapipes.idx_branch import ACTIVE as ACTIVE_BR, FROM_NODE, TO_NODE, FROM_NODE_T, \
-    TO_NODE_T, VINIT, T_OUT, VINIT_T, T_OUT_OLD
+    TO_NODE_T, VINIT, VINIT_T, T_OUT_OLD
 from pandapipes.idx_node import PINIT, TINIT, TINIT_OLD, ACTIVE as ACTIVE_ND
+from scipy.sparse.linalg import spsolve
+
+from pandapipes.idx_branch import FROM_NODE, TO_NODE, FROM_NODE_T, TO_NODE_T, VINIT, TOUTINIT, VINIT_T
+from pandapipes.idx_node import PINIT, TINIT
 from pandapipes.pf.build_system_matrix import build_system_matrix
-from pandapipes.pf.derivative_calculation import calculate_derivatives_hydraulic
+from pandapipes.pf.derivative_calculation import calculate_derivatives_hydraulic, calculate_derivatives_thermal
 from pandapipes.pf.pipeflow_setup import get_net_option, get_net_options, set_net_option, \
     init_options, create_internal_results, write_internal_results, get_lookup, create_lookups,\
     initialize_pit, check_connectivity, reduce_pit, set_user_pf_options, init_all_result_tables
+    init_options, create_internal_results, write_internal_results, get_lookup, create_lookups, \
+    initialize_pit, reduce_pit, set_user_pf_options, init_all_result_tables, \
+    identify_active_nodes_branches, PipeflowNotConverged
 from pandapipes.pf.result_extraction import extract_all_results, extract_results_active_pit
 from pandapower.auxiliary import ppException
 from scipy.sparse.linalg import spsolve
@@ -66,7 +73,7 @@ def pipeflow(net, sol_vec=None, **kwargs):
     calculation_mode = get_net_option(net, "mode")
 
     # init result tables
-    net["converged"] = False
+    net.converged = False
     init_all_result_tables(net)
 
     # TODO: a really bad solution, should be passed in from outside!
@@ -75,16 +82,27 @@ def pipeflow(net, sol_vec=None, **kwargs):
         if get_net_option(net, "time_step") is None:
             set_net_option(net, "time_step", 0)
     node_pit, branch_pit = initialize_pit(net)
-
-    if (len(node_pit) == 0) & (len(branch_pit) == 0):
-        logger.warning("There are no node and branch entries defined. This might mean that your net"
-                       " is empty")
+    if len(node_pit) == 0:
+        logger.warning("There are no nodes defined. "
+                       "You need at least one node! "
+                       "Without any nodes, you are not able to conduct a pipeflow!")
         return
 
     calculation_mode = get_net_option(net, "mode")
     calculate_hydraulics = calculation_mode in ["hydraulics", "all"]
     calculate_heat = calculation_mode in ["heat", "all"]
 
+    # cannot be moved to calculate_hydraulics as the active node/branch hydraulics lookup is also required to
+    # determine the active node/branch heat transfer lookup
+    identify_active_nodes_branches(net, branch_pit, node_pit)
+
+    if calculation_mode == "heat":
+        if not net.user_pf_options["hyd_flag"]:
+            raise UserWarning("Converged flag not set. Make sure that hydraulic calculation "
+                              "results are available.")
+        else:
+            net["_pit"]["node"][:, PINIT] = sol_vec[:len(node_pit)]
+            net["_pit"]["branch"][:, VINIT] = sol_vec[len(node_pit):]
     # TODO: This is not necessary in every time step, but we need the result! The result of the
     #       connectivity check is currently not saved anywhere!
     if get_net_option(net, "check_connectivity"):
@@ -104,20 +122,25 @@ def pipeflow(net, sol_vec=None, **kwargs):
         net["_active_pit"]["branch"][:, VINIT] = sol_vec[len(node_pit):]
 
     if calculate_hydraulics:
-        converged, _ = hydraulics(net)
-        if not converged:
+        reduce_pit(net, node_pit, branch_pit, mode="hydraulics")
+        hydraulics(net)
+        if not net.converged:
             raise PipeflowNotConverged("The hydraulic calculation did not converge to a solution.")
+        extract_results_active_pit(net, mode="hydraulics")
 
     if calculate_heat:
-        converged, _ = heat_transfer(net)
-        if not converged:
+        node_pit, branch_pit = net["_pit"]["node"], net["_pit"]["branch"]
+        identify_active_nodes_branches(net, branch_pit, node_pit, False)
+        reduce_pit(net, node_pit, branch_pit, mode="heat_transfer")
+        heat_transfer(net)
+        if not net.converged:
             raise PipeflowNotConverged("The heat transfer calculation did not converge to a "
                                        "solution.")
+        extract_results_active_pit(net, mode="heat_transfer")
     elif not calculate_hydraulics:
         raise UserWarning("No proper calculation mode chosen.")
 
-    extract_results_active_pit(net, node_pit, branch_pit, nodes_connected, branches_connected)
-    extract_all_results(net, nodes_connected, branches_connected)
+    extract_all_results(net, calculation_mode)
 
     # TODO: a really bad solution, should be passed in from outside!
     #if get_net_option(net, "transient"):
@@ -153,7 +176,7 @@ def hydraulics(net):
     #                            x(2)   = x(1) - J^-1(x(1) *F(1)
     # note: Jacobian equations don't change, just the X values subbed in at each iteration which
     # makes the jacobian different
-    while not get_net_option(net, "converged") and niter <= max_iter:
+    while not net.converged and niter <= max_iter:
         logger.debug("niter %d" % niter)
 
         # solve_hydraulics is where the calculation takes place
@@ -173,16 +196,12 @@ def hydraulics(net):
     write_internal_results(net, iterations=niter, error_p=error_p[niter - 1],
                            error_v=error_v[niter - 1], residual_norm=residual_norm)
 
-    converged = get_net_option(net, "converged")
-    net['converged'] = converged
-    if converged:
+    if net.converged:
         set_user_pf_options(net, hyd_flag=True)
 
-    log_final_results(net, converged, niter, residual_norm)
+    log_final_results(net, niter, residual_norm)
     if not get_net_option(net, "reuse_internal_data"):
         net.pop("_internal_data", None)
-
-    return converged, niter
 
 
 def heat_transfer(net):
@@ -198,7 +217,7 @@ def heat_transfer(net):
 
     error_t, error_t_out, residual_norm = [], [], None
 
-    set_net_option(net, "converged", False)
+    net.converged = False
     niter = 0
 
     branch_pit = net["_active_pit"]["branch"]
@@ -206,7 +225,7 @@ def heat_transfer(net):
 
 
     # This loop is left as soon as the solver converged
-    while not get_net_option(net, "converged") and niter <= max_iter:
+    while not net.converged and niter <= max_iter:
         logger.debug("niter %d" % niter)
 
         # solve_temperature is where the calculation takes place
@@ -221,7 +240,7 @@ def heat_transfer(net):
         error_t_out.append(linalg.norm(delta_t_out) / (len(delta_t_out)))
 
         finalize_iteration(net, niter, error_t, error_t_out, residual_norm, nonlinear_method, tol_t,
-                           tol_t, tol_res, t_init_old, t_out_old, hydraulic_mode=True)
+                           tol_t, tol_res, t_init_old, t_out_old, hydraulic_mode=False)
         niter += 1
 
     node_pit[:, TINIT_OLD] = node_pit[:, TINIT]
@@ -229,11 +248,7 @@ def heat_transfer(net):
     write_internal_results(net, iterations_T=niter, error_T=error_t[niter - 1],
                            residual_norm_T=residual_norm)
 
-    converged = get_net_option(net, "converged")
-    net['converged'] = converged
-    log_final_results(net, converged, niter, residual_norm, hydraulic_mode=False)
-
-    return converged, niter
+    log_final_results(net, niter, residual_norm, hyraulic_mode=False)
 
 
 def solve_hydraulics(net):
@@ -251,7 +266,7 @@ def solve_hydraulics(net):
     branch_pit = net["_active_pit"]["branch"]
     node_pit = net["_active_pit"]["node"]
 
-    branch_lookups = get_lookup(net, "branch", "from_to_active")
+    branch_lookups = get_lookup(net, "branch", "from_to_active_hydraulics")
     for comp in net['component_list']:
         comp.adaption_before_derivatives_hydraulic(
             net, branch_pit, node_pit, branch_lookups, options)
@@ -290,7 +305,7 @@ def solve_temperature(net):
     options = net["_options"]
     branch_pit = net["_active_pit"]["branch"]
     node_pit = net["_active_pit"]["node"]
-    branch_lookups = get_lookup(net, "branch", "from_to_active")
+    branch_lookups = get_lookup(net, "branch", "from_to_active_heat_transfer")
 
     # Negative velocity values are turned to positive ones (including exchange of from_node and
     # to_node for temperature calculation
@@ -303,20 +318,22 @@ def solve_temperature(net):
     branch_pit[mask, TO_NODE_T] = branch_pit[mask, FROM_NODE]
 
     for comp in net['component_list']:
-        if issubclass(comp, BranchComponent):
-            comp.calculate_derivatives_thermal(net, branch_pit, node_pit, branch_lookups, options)
+        comp.adaption_before_derivatives_thermal(
+            net, branch_pit, node_pit, branch_lookups, options)
+    calculate_derivatives_thermal(net, branch_pit, node_pit, options)
+    for comp in net['component_list']:
+        comp.adaption_after_derivatives_thermal(
+            net, branch_pit, node_pit, branch_lookups, options)
     jacobian, epsilon = build_system_matrix(net, branch_pit, node_pit, True)
 
     t_init_old = node_pit[:, TINIT].copy()
-    t_out_old = branch_pit[:, T_OUT].copy()
+    t_out_old = branch_pit[:, TOUTINIT].copy()
 
     x = spsolve(jacobian, epsilon)
     node_pit[:, TINIT] += x[:len(node_pit)] * options["alpha"]
-    branch_pit[:, T_OUT] += x[len(node_pit):] * options["alpha"]
+    branch_pit[:, TOUTINIT] += x[len(node_pit):] * options["alpha"]
 
-
-
-    return branch_pit[:, T_OUT], t_out_old, node_pit[:, TINIT], t_init_old, epsilon
+    return branch_pit[:, TOUTINIT], t_out_old, node_pit[:, TINIT], t_init_old, epsilon
 
 
 def set_damping_factor(net, niter, error):
@@ -350,7 +367,7 @@ def set_damping_factor(net, niter, error):
 
 def finalize_iteration(net, niter, error_1, error_2, residual_norm, nonlinear_method, tol_1, tol_2,
                        tol_res, vals_1_old, vals_2_old, hydraulic_mode=True):
-    col1, col2 = (PINIT, VINIT) if hydraulic_mode else (TINIT, T_OUT)
+    col1, col2 = (PINIT, VINIT) if hydraulic_mode else (TINIT, TOUTINIT)
 
     # Control of damping factor
     if nonlinear_method == "automatic":
@@ -366,9 +383,9 @@ def finalize_iteration(net, niter, error_1, error_2, residual_norm, nonlinear_me
     # Setting convergence flag
     if error_2[niter] <= tol_2 and error_1[niter] <= tol_1 and residual_norm < tol_res:
         if nonlinear_method != "automatic":
-            set_net_option(net, "converged", True)
+            net.converged = True
         elif get_net_option(net, "alpha") == 1:
-            set_net_option(net, "converged", True)
+            net.converged = True
 
     if hydraulic_mode:
         logger.debug("errorv: %s" % error_1[niter])
@@ -379,7 +396,7 @@ def finalize_iteration(net, niter, error_1, error_2, residual_norm, nonlinear_me
         logger.debug("alpha: %s" % get_net_option(net, "alpha"))
 
 
-def log_final_results(net, converged, niter, residual_norm, hydraulic_mode=True):
+def log_final_results(net, niter, residual_norm, hydraulic_mode=True):
     if hydraulic_mode:
         solver = "hydraulics"
         outputs = ["tol_p", "tol_v"]
@@ -387,7 +404,7 @@ def log_final_results(net, converged, niter, residual_norm, hydraulic_mode=True)
         solver = "heat transfer"
         outputs = ["tol_T"]
     logger.debug("--------------------------------------------------------------------------------")
-    if not converged:
+    if not net.converged:
         logger.debug("Maximum number of iterations reached but %s solver did not converge."
                      % solver)
         logger.debug("Norm of residual: %s" % residual_norm)
@@ -397,10 +414,3 @@ def log_final_results(net, converged, niter, residual_norm, hydraulic_mode=True)
         logger.debug("Norm of residual: %s" % residual_norm)
         for out in outputs:
             logger.debug("%s: %s" % (out, get_net_option(net, out)))
-
-
-class PipeflowNotConverged(ppException):
-    """
-    Exception being raised in case pipeflow did not converge.
-    """
-    pass

@@ -10,8 +10,9 @@ from pandapower.timeseries.output_writer import OutputWriter
 from pandapower.timeseries.run_time_series import init_time_series as init_time_series_pp, cleanup, \
     run_loop
 
-from pandapipes.pf.pipeflow_setup import set_user_pf_options
 from pandapipes.pipeflow import PipeflowNotConverged, pipeflow
+
+from pandapipes.pf.pipeflow_setup import set_user_pf_options
 
 try:
     import pandaplan.core.pplog as logging
@@ -19,7 +20,6 @@ except ImportError:
     import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.WARNING)
 
 
 def init_default_outputwriter(net, time_steps, **kwargs):
