@@ -52,6 +52,7 @@ class Pump(BranchWZeroLengthComponent):
     def create_pit_branch_entries(cls, net, branch_pit):
         """
         Function which creates pit branch entries with a specific table.
+
         :param net: The pandapipes network
         :type net: pandapipesNet
         :param branch_pit:
@@ -186,7 +187,9 @@ class Pump(BranchWZeroLengthComponent):
     @classmethod
     def get_component_input(cls):
         """
+
         Get component input.
+
         :return:
         :rtype:
         """
@@ -200,7 +203,9 @@ class Pump(BranchWZeroLengthComponent):
     @classmethod
     def get_result_table(cls, net):
         """
+
         Gets the result table.
+
         :param net: The pandapipes network
         :type net: pandapipesNet
         :return: (columns, all_float) - the column names and whether they are all float type. Only
