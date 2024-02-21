@@ -2,23 +2,20 @@
 # and Energy System Technology (IEE), Kassel, and University of Kassel. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 
+from operator import itemgetter
+
 import numpy as np
 from numpy import dtype
-from operator import itemgetter
-from pandapipes.component_models.junction_component import Junction
+
 from pandapipes.component_models.abstract_models.circulation_pump import CirculationPump
-from pandapipes.component_models.component_toolbox import set_fixed_node_entries, update_fixed_node_entries
-from pandapipes.idx_node import PINIT, NODE_TYPE, P, EXT_GRID_OCCURENCE
-from pandapipes.pf.pipeflow_setup import get_lookup, get_net_option
-from pandapipes.idx_branch import STD_TYPE, VINIT, D, AREA, ACTIVE, LOSS_COEFFICIENT as LC, FROM_NODE, \
-    TINIT, PL, ACTUAL_POS, DESIRED_MV, RHO, TO_NODE, JAC_DERIV_DP, JAC_DERIV_DP1, JAC_DERIV_DV, LOAD_VEC_BRANCHES
-from pandapipes.idx_node import PINIT, PAMB, TINIT as TINIT_NODE, HEIGHT, RHO as RHO_node
-from pandapipes.constants import NORMAL_TEMPERATURE, NORMAL_PRESSURE, P_CONVERSION, GRAVITATION_CONSTANT
-from pandapipes.properties.fluids import get_fluid
-from pandapipes.component_models.component_toolbox import p_correction_height_air
 from pandapipes.component_models.component_toolbox import set_fixed_node_entries, \
     get_mass_flow_at_nodes
-from pandapipes.pf.result_extraction import extract_branch_results_without_internals
+from pandapipes.component_models.component_toolbox import update_fixed_node_entries
+from pandapipes.component_models.junction_component import Junction
+from pandapipes.constants import P_CONVERSION, GRAVITATION_CONSTANT
+from pandapipes.idx_branch import ACTIVE, TOUTINIT
+from pandapipes.idx_node import PINIT, TINIT as TINIT_NODE, RHO as RHO_node
+from pandapipes.pf.pipeflow_setup import get_lookup, get_net_option
 
 try:
     import pandaplan.core.pplog as logging
@@ -297,8 +294,8 @@ class DynamicCirculationPump(CirculationPump):
         res_table["p_static_bar"].values[in_service] = circ_pump_tbl.p_static_bar.values
         res_table["p_flow_bar"].values[in_service] = node_pit[flow_nodes, PINIT]
         res_table["deltap_bar"].values[in_service] = deltap_bar[in_service]
-        res_table["t_from_k"].values[p_grids] = node_pit[return_node, TINIT]
-        res_table["t_to_k"].values[p_grids] = node_pit[flow_nodes, TINIT]
+        res_table["t_from_k"].values[p_grids] = node_pit[return_node, TOUTINIT]
+        res_table["t_to_k"].values[p_grids] = node_pit[flow_nodes, TOUTINIT]
         res_table["rho"].values[p_grids] = node_pit[return_node, RHO_node]
         res_table["p_lift"].values[p_grids] = circ_pump_tbl.p_lift.values
         res_table["m_head"].values[p_grids] = circ_pump_tbl.m_head.values

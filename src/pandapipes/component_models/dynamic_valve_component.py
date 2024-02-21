@@ -2,17 +2,18 @@
 # and Energy System Technology (IEE), Kassel, and University of Kassel. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 
+from operator import itemgetter
+
 import numpy as np
 from numpy import dtype
-from operator import itemgetter
-from pandapipes.constants import NORMAL_TEMPERATURE, NORMAL_PRESSURE, R_UNIVERSAL, P_CONVERSION
+
 from pandapipes.component_models.abstract_models.branch_wzerolength_models import \
     BranchWZeroLengthComponent
 from pandapipes.component_models.junction_component import Junction
-from pandapipes.pf.pipeflow_setup import get_net_option, get_net_options
-from pandapipes.idx_node import PINIT, PAMB, TINIT as TINIT_NODE, NODE_TYPE, P, ACTIVE as ACTIVE_ND, LOAD
 from pandapipes.idx_branch import D, AREA, TL, Kv_max, ACTUAL_POS, STD_TYPE, FROM_NODE, TO_NODE, \
-    VINIT, RHO, PL, LOSS_COEFFICIENT as LC, DESIRED_MV, ACTIVE, LOAD_VEC_NODES
+    RHO, LOSS_COEFFICIENT as LC, DESIRED_MV
+from pandapipes.idx_node import PINIT, PAMB
+from pandapipes.pf.pipeflow_setup import get_net_option
 from pandapipes.pf.result_extraction import extract_branch_results_without_internals
 from pandapipes.properties.fluids import get_fluid
 

@@ -7,14 +7,13 @@ from operator import itemgetter
 import numpy as np
 from numpy import dtype
 
-from pandapipes.component_models.junction_component import Junction
-from pandapipes.component_models.pump_component import Pump
 from pandapipes.component_models.abstract_models.branch_wzerolength_models import \
     BranchWZeroLengthComponent
-from pandapipes.constants import NORMAL_TEMPERATURE, NORMAL_PRESSURE, R_UNIVERSAL, P_CONVERSION, \
-     GRAVITATION_CONSTANT
+from pandapipes.component_models.junction_component import Junction
+from pandapipes.constants import NORMAL_PRESSURE, R_UNIVERSAL, P_CONVERSION, \
+    GRAVITATION_CONSTANT
 from pandapipes.idx_branch import STD_TYPE, VINIT, D, AREA, TL, LOSS_COEFFICIENT as LC, FROM_NODE, \
-    TINIT, PL, Kv_max, ACTUAL_POS, DESIRED_MV, RHO
+    TOUTINIT, PL, ACTUAL_POS, DESIRED_MV, RHO
 from pandapipes.idx_node import PINIT, PAMB, TINIT as TINIT_NODE
 from pandapipes.pf.pipeflow_setup import get_fluid, get_net_option, get_lookup
 from pandapipes.pf.result_extraction import extract_branch_results_without_internals
@@ -133,7 +132,7 @@ class DynamicPump(BranchWZeroLengthComponent):
         fluid = get_fluid(net)
         p_from = node_pit[from_nodes, PAMB] + node_pit[from_nodes, PINIT]
         # p_to = node_pit[to_nodes, PAMB] + node_pit[to_nodes, PINIT]
-        numerator = NORMAL_PRESSURE * pump_pit[:, TINIT]
+        numerator = NORMAL_PRESSURE * pump_pit[:, TOUTINIT]
         v_mps = pump_pit[:, VINIT]
         desired_mv = dyn_pump_tbl.desired_mv.values
         cur_actual_pos = dyn_pump_tbl.actual_pos.values
