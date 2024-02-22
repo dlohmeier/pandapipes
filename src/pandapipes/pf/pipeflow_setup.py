@@ -39,7 +39,7 @@ default_options = {"friction_model": "nikuradse", "tol_p": 1e-4, "tol_v": 1e-4,
                    "check_connectivity": True, "use_numba": True, "max_iter_colebrook": 100,
                    "only_update_hydraulic_matrix": False, "reuse_internal_data": False,
                    "quit_on_inconsistency_connectivity": False, "calc_compression_power": True,
-                   "transient": False, "dynamic_sim": False, "time_step": None, "dt": 60}
+                   "transient": False, "simulation_time_step": None, "dt": 60}
 
 
 def get_net_option(net, option_name):
@@ -349,7 +349,7 @@ def initialize_pit(net):
     :rtype: tuple(np.array)
 
     """
-    if get_net_option(net, "transient") and get_net_option(net, "time_step") != 0:
+    if get_net_option(net, "transient") and get_net_option(net, "simulation_time_step") != 0:
         pit = net["_pit"]
     else:
         create_lookups(net)

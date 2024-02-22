@@ -166,7 +166,7 @@ class DynamicValve(BranchWZeroLengthComponent):
         cur_actual_pos = valve_pit[:, ACTUAL_POS]
 
 
-        if get_net_option(net, "time_step") == cls.time_step:
+        if get_net_option(net, "simulation_time_step") == cls.time_step:
             # a controller timeseries is running
             actual_pos = cls.plant_dynamics(dt, desired_mv, dyn_valve_tbl)
             # Account for nan's when FCE are in manual
@@ -188,7 +188,7 @@ class DynamicValve(BranchWZeroLengthComponent):
         kv_at_travel = relative_flow * valve_pit[:, Kv_max] # m3/h.Bar
 
         delta_p = np.abs(p_from - p_to)  # bar
-        #if get_net_option(net, "time_step") == None or get_net_option(net, "time_step") == cls.time_step:
+        #if get_net_option(net, "simulation_time_step") == None or get_net_option(net, "simulation_time_step") == cls.time_step:
             # On first loop initialise delta P to 0.1 if delta is zero
             #delta_p = np.where(delta_p == 0, 0.1, delta_p)
         #delta_p = np.where(np.ma.masked_where(delta_p == 0, lift == 1.0).mask, 0.1, delta_p)

@@ -1,21 +1,15 @@
-import pytest
-from pandapower.control import ConstControl
-
-import pandapipes as pp
-import numpy as np
 import copy
-import matplotlib.pyplot as plt
-import time
 import tempfile
+
+import matplotlib.pyplot as plt
+import numpy as np
 # create empty net
 import pandas as pd
-import os
-import pandapower.control as control
-from pandapipes.component_models import Pipe
-from pandapipes.timeseries import run_timeseries, init_default_outputwriter
+from pandapower.control import ConstControl
 from pandapower.timeseries import OutputWriter, DFData
-from pandapipes.test.pipeflow_internals import internals_data_path
-from types import MethodType
+
+import pandapipes as pp
+from pandapipes.timeseries import run_timeseries
 
 
 class OutputWriterTransient(OutputWriter):
@@ -45,7 +39,8 @@ def _output_writer(net, time_steps, ow_path=None):
 
     if transient_transfer:
         log_variables = [
-            ('res_junction', 't_k'), ('res_junction', 'p_bar'), ('res_pipe', 't_to_k'), ('res_internal', 't_k')
+            ('res_junction', 't_k'), ('res_junction', 'p_bar'), ('res_pipe', 't_to_k'),
+            ('res_internal', 't_k'), ('res_pipe', 'v_mean_m_per_s')
         ]
     else:
         log_variables = [
@@ -82,8 +77,8 @@ time_steps = range(300)
 dt = 20
 iterations = 3000
 ow = _output_writer(net, time_steps, ow_path=tempfile.gettempdir())
-run_timeseries(net, time_steps, dynamic_sim=True, transient=transient_transfer, mode="all", dt=dt,
-               reuse_internal_data=True, iter=iterations)
+run_timeseries(net, time_steps, transient=transient_transfer, mode="all", dt=dt,
+               reuse_internal_data=False, iter=iterations)
 
 if transient_transfer:
     res_T = ow.np_results["res_internal.t_k"]
@@ -103,7 +98,7 @@ if transient_transfer:
 
 plt.ion()
 
-fig = plt.figure()
+fig = plt.figure(figsize=(15, 10))
 ax = fig.add_subplot(221)
 ax.set_title("Pipe 1")
 ax.set_ylabel("Temperature [K]")

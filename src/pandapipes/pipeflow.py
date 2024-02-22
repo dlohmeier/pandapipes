@@ -70,11 +70,6 @@ def pipeflow(net, sol_vec=None, **kwargs):
     net.converged = False
     init_all_result_tables(net)
 
-    # TODO: a really bad solution, should be passed in from outside!
-    #if get_net_option(net, "transient"):
-    if get_net_option(net, "dynamic_sim"):
-        if get_net_option(net, "time_step") is None:
-            set_net_option(net, "time_step", 0)
     node_pit, branch_pit = initialize_pit(net)
     if len(node_pit) == 0:
         logger.warning("There are no nodes defined. "
@@ -121,11 +116,6 @@ def pipeflow(net, sol_vec=None, **kwargs):
         raise UserWarning("No proper calculation mode chosen.")
 
     extract_all_results(net, calculation_mode)
-
-    # TODO: a really bad solution, should be passed in from outside!
-    #if get_net_option(net, "transient"):
-    if get_net_option(net, "dynamic_sim"):
-        set_net_option(net, "time_step", get_net_option(net, "time_step") + 1)
 
 
 def hydraulics(net):

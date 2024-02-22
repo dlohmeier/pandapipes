@@ -165,7 +165,7 @@ class DynamicPump(BranchWZeroLengthComponent):
         vol_m3_s = v_mps * area
         vol_m3_h = vol_m3_s * 3600
 
-        if get_net_option(net, "time_step") == cls.time_step:
+        if get_net_option(net, "simulation_time_step") == cls.time_step:
             # a controller timeseries is running
             actual_pos = cls.plant_dynamics(dt, desired_mv, dyn_pump_tbl)
             # Account for nan's when FCE are in manual

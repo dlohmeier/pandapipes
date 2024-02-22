@@ -11,7 +11,7 @@ from numpy import dtype
 from pandapipes.component_models.abstract_models.node_models import NodeComponent
 from pandapipes.component_models.component_toolbox import p_correction_height_air
 from pandapipes.idx_node import L, ELEMENT_IDX, RHO, PINIT, node_cols, HEIGHT, TINIT, PAMB, \
-    ACTIVE as ACTIVE_ND, TINIT_OLD
+    ACTIVE as ACTIVE_ND, TINIT_OLD, EXT_GRID_OCCURENCE, EXT_GRID_OCCURENCE_T, LOAD
 from pandapipes.pf.pipeflow_setup import add_table_lookup, get_table_number, \
     get_lookup
 from pandapipes.pf.pipeflow_setup import get_net_option
@@ -81,10 +81,14 @@ class Junction(NodeComponent):
         junctions = net[cls.table_name()]
         junction_pit = node_pit[f:t, :]
 
-        if not get_net_option(net, "transient") or get_net_option(net, "time_step") == 0:
+        if not get_net_option(net, "transient") or get_net_option(net, "simulation_time_step") == 0:
             junction_pit[:, :] = np.array([table_nr, 0, L] + [0] * (node_cols - 3))
             junction_pit[:, TINIT] = junctions.tfluid_k.values
             junction_pit[:, TINIT_OLD] = junction_pit[:, TINIT]
+        else:
+            junction_pit[:, EXT_GRID_OCCURENCE] = 0
+            junction_pit[:, EXT_GRID_OCCURENCE_T] = 0
+            junction_pit[:, LOAD] = 0
 
         junction_pit[:, ELEMENT_IDX] = junctions.index.values
         junction_pit[:, HEIGHT] = junctions.height_m.values

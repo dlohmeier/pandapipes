@@ -159,8 +159,8 @@ class DynamicCirculationPump(CirculationPump):
         desired_mv = circ_pump_tbl.desired_mv.values
         cur_actual_pos = circ_pump_tbl.actual_pos.values
 
-        #if not np.isnan(desired_mv) and get_net_option(net, "time_step") == cls.time_step:
-        if get_net_option(net, "time_step") == cls.time_step:
+        #if not np.isnan(desired_mv) and get_net_option(net, "simulation_time_step") == cls.time_step:
+        if get_net_option(net, "simulation_time_step") == cls.time_step:
             # a controller timeseries is running
             actual_pos = cls.plant_dynamics(dt, desired_mv, circ_pump_tbl)
             # Account for nan's when FCE are in manual

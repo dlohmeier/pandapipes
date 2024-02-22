@@ -116,7 +116,7 @@ class Pipe(BranchWInternalsComponent):
         int_node_pit[:, RHO_NODES] = get_fluid(net).get_density(int_node_pit[:, TINIT_NODE])
         int_node_pit[:, ACTIVE_ND] = \
             np.repeat(net[cls.table_name()][cls.active_identifier()].values, int_node_number)
-        if not get_net_option(net, "transient") or get_net_option(net, "time_step") == 0:
+        if not get_net_option(net, "transient") or get_net_option(net, "simulation_time_step") == 0:
             int_node_pit[:, TINIT_NODE] = vinterp(junction_pit[fj_nodes, TINIT_NODE],
                                                   junction_pit[tj_nodes, TINIT_NODE],
                                                   int_node_number)
@@ -157,7 +157,7 @@ class Pipe(BranchWInternalsComponent):
             pipe_pit, LC, net[tbl].loss_coefficient.values, internal_pipe_number, has_internals)
 
         pipe_pit[:, AREA] = pipe_pit[:, D] ** 2 * np.pi / 4
-        if not get_net_option(net, "transient") or get_net_option(net, "time_step") == 0:
+        if not get_net_option(net, "transient") or get_net_option(net, "simulation_time_step") == 0:
             pipe_pit[:, T_OUT_OLD] = 293
             pipe_pit[:, TOUTINIT] = 293
 
