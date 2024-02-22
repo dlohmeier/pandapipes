@@ -228,7 +228,3 @@ class Pump(BranchWZeroLengthComponent):
             output += ["compr_power_mw"]
 
         return output, True
-
-
-def get_std_type_lookup(net, table_name):
-    return np.array(list(net.std_types[table_name].keys()))
