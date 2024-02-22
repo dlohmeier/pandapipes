@@ -1,12 +1,11 @@
 import numpy as np
-
-from pandapipes import get_net_option
 from pandapipes.idx_branch import LENGTH, ETA, RHO, D, K, RE, LAMBDA, LOAD_VEC_BRANCHES, \
     JAC_DERIV_DV, JAC_DERIV_DP, JAC_DERIV_DP1, LOAD_VEC_NODES, JAC_DERIV_DV_NODE, VINIT, \
     FROM_NODE, TO_NODE, CP, VINIT_T, FROM_NODE_T, TOUTINIT, TEXT, AREA, ALPHA, TL, QEXT, \
     LOAD_VEC_NODES_T, \
     LOAD_VEC_BRANCHES_T, JAC_DERIV_DT, JAC_DERIV_DT1, JAC_DERIV_DT_NODE, T_OUT_OLD
 from pandapipes.idx_node import TINIT as TINIT_NODE
+from pandapipes.pf.pipeflow_setup import get_net_option
 from pandapipes.properties.fluids import get_fluid
 
 

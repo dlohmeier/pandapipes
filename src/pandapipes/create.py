@@ -1777,10 +1777,10 @@ def create_heat_exchangers(net, from_junctions, to_junctions, diameter_m, qext_w
 
     :param net: The net for which the heat exchangers should be created
     :type net: pandapipesNet
-    :param from_junctions: ID of the junctions on one side the heat exchangers will be\
+    :param from_junctions: IDs of the junctions on one side the heat exchangers will be\
             connected with
     :type from_junctions: Iterable(int)
-    :param to_junctions: ID of the junctions on the other side the heat exchangers will be\
+    :param to_junctions: IDs of the junctions on the other side the heat exchangers will be\
             connected with
     :type to_junctions: Iterable(int)
     :param diameter_m: The heat exchangers inner diameter in [m]
@@ -1791,9 +1791,10 @@ def create_heat_exchangers(net, from_junctions, to_junctions, diameter_m, qext_w
     :param loss_coefficient: An additional pressure loss coefficient, introduced by e.g. bends
     :type loss_coefficient: Iterable(float) or float
     :param name: The name of the heat exchangers
-    :type name: str, default None
-    :param index: Force a specified ID if it is available. If None, the index one higher than the\
-            highest already existing index is selected.
+    :type name: Iterable(str) or str, default None
+    :param index: Force specified IDs if they are available. If None, the index one higher than the\
+            highest already existing index is selected and counted onwards for the amount of heat \
+            exchangers created.
     :type index: Iterable(str) or str, default None
     :param in_service: True if the heat exchangers are in service or False if they are out of service
     :type in_service: Iterable(bool) or bool, default True
