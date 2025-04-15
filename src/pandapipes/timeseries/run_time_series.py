@@ -5,10 +5,14 @@
 import tempfile
 
 from pandapower.control import NetCalculationNotConverged
+
+from pandapipes.pipeflow import PipeflowNotConverged, pipeflow
 from pandapower.control.util.diagnostic import control_diagnostic
 from pandapower.timeseries.output_writer import OutputWriter
 from pandapower.timeseries.run_time_series import init_time_series as init_time_series_pp, cleanup, \
     print_progress, run_time_step, _call_output_writer
+from pandapower.timeseries.run_time_series import init_time_series as init_time_series_pp, cleanup,\
+    run_loop
 
 from pandapipes.control import run_control
 from pandapipes.pipeflow import PipeflowNotConverged, pipeflow

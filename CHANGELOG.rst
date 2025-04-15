@@ -1,6 +1,58 @@
 Change Log
 =============
 
+[upcoming release] - 2025-..-..
+-------------------------------
+- [CHANGED] load JSON file with unknown objects as simple dicts is possible now
+
+[0.11.0] - 2024-11-07
+-------------------------------
+- [ADDED] heat_consumer plotting
+- [ADDED] variable "u_w_per_m2k" to std_type pipe
+- [ADDED] standard district heating pipe types
+- [ADDED] support for Python 3.12
+- [ADDED] t_outlet_k to result tables of branch components
+- [ADDED] relying tests, to check the ability to work with pandapower develop
+- [ADDED] bidirectional calculation mode for heat calculations
+- [CHANGED] heat_consumer to enable temperature control
+- [CHANGED] switched from setup.py to pyproject.toml
+- [CHANGED] variable "alpha_w_per_m2k" to "u_w_per_m2k"
+- [CHANGED] option "all" for pipeflow heat calculations to "sequential", the new option is "bidirectional"
+- [CHANGED] volume flow in result tables instead of normalized volume flow for non gas fluids
+- [CHANGED] introduction of slack mass flow into nodes as solved variable
+- [CHANGED] circulation pumps are now branches and thus cannot generate or consume mass
+- [FIXED] Pressure plot not working for circ pump
+- [FIXED] volume flow rate for incompressible fluids based on real density, thus in this case results are renamed from "vdot_norm_m3_per_s" to "vdot_m3_per_s"
+- [FIXED] some imports from pandapower
+- [FIXED] NAN to nan because of numpy changes
+- [FIXED] if velocity in a branch is negative to get corrected nodes from the branch pit
+- [FIXED] plot pressure profile not working for circulation pump sources
+- [FIXED] Infeed switches are considered correctly
+- [FIXED] Heat consumers with qext_w = 0 and temperature control ignore temperature set points
+- [FIXED] alpha also applied to mdot
+- [REMOVED] support for Python 3.8 due to EOL
+
+
+
+[0.10.0] - 2024-04-09
+-------------------------------
+
+- [ADDED] function for plotting pressure profile
+- [ADDED] function for calculating distance to junctions
+- [ADDED] topology function for returning unsupplied junctions
+- [ADDED] topology function for returning elements on path
+- [ADDED] function for getting all branch-component table names
+- [ADDED] function for getting all branch-component models
+- [ADDED] component 'heat_consumer' that combines the two components heat_exchanger and flow_control
+- [CHANGED] moving generalizing pit entries up from specific components to the abstract class
+- [CHANGED] 'JAC_DERIV_DT1' to 'JAC_DERIV_DTOUT'
+- [CHANGED] solving for minit instead of vinit
+- [CHANGED] distinct max. iteration settings for hydraulic and thermal calculation
+- [CHANGED] default tolerances from 1e-4 to 1e-5
+- [FIXED] results of old grid are wrong, pipeflow needs to be conducted again
+- [FIXED] taking norm density instead of real density in Darcy-Weisbach equation
+- [FIXED] in circulation pumps only junctions in-service are considered
+
 [0.9.0] - 2023-12-22
 -------------------------------
 

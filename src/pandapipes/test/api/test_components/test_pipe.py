@@ -6,6 +6,7 @@ import pytest
 
 import pandapipes
 from pandapipes.properties.fluids import _add_fluid_to_net
+import copy
 
 
 @pytest.mark.parametrize("use_numba", [True, False])
@@ -37,9 +38,11 @@ def test_pipe_velocity_results(use_numba):
         name="natural_gas", fluid_type="gas", viscosity=11.93e-6, heat_capacity=2185,
         compressibility=1, der_compressibility=0, density=0.82752
     ))
-    pandapipes.pipeflow(net, stop_condition="tol", iter=70, friction_model="nikuradse",
-                        transient=False, nonlinear_method="automatic", tol_p=1e-5, tol_v=1e-5,
-                        use_numba=use_numba)
+    max_iter_hyd = 5 if use_numba else 5
+    pandapipes.pipeflow(
+        net, stop_condition="tol", max_iter_hyd=max_iter_hyd, friction_model="nikuradse",
+        transient=False, nonlinear_method="automatic", tol_p=1e-5, tol_m=1e-5, use_numba=use_numba
+    )
 
     v_1_sec_from = net.res_pipe.v_from_m_per_s
     v_1_sec_to = net.res_pipe.v_from_m_per_s
@@ -60,8 +63,9 @@ def test_pipe_velocity_results(use_numba):
         name="natural_gas", fluid_type="gas", viscosity=11.93e-6, heat_capacity=2185,
         compressibility=1, der_compressibility=0, density=0.82752
     ))
-    pandapipes.pipeflow(net, stop_condition="tol", iter=70, friction_model="nikuradse",
-                        transient=False, nonlinear_method="automatic", tol_p=1e-5, tol_v=1e-5,
+    pandapipes.pipeflow(net, stop_condition="tol", max_iter_hyd=max_iter_hyd,
+                        friction_model="nikuradse",
+                        transient=False, nonlinear_method="automatic", tol_p=1e-5, tol_m=1e-5,
                         use_numba=use_numba)
 
     v_n_sec_from = net.res_pipe.v_from_m_per_s
@@ -72,3 +76,38 @@ def test_pipe_velocity_results(use_numba):
 
     assert np.all(np.abs(diff_from) < 1e-9)
     assert np.all(np.abs(diff_to) < 1e-9)
+
+
+@pytest.fixture
+def create_net_3_juncs():
+    net = pandapipes.create_empty_network()
+    pandapipes.create_junctions(net, 3, 3, 273)
+    return net
+
+
+def test_namechange_pipe_from_parameters(create_net_3_juncs):
+    net = copy.deepcopy(create_net_3_juncs)
+    length_km = 1
+    diameter_m = 0.01
+    alpha = 5
+    with pytest.warns(DeprecationWarning):
+        pandapipes.create_pipe_from_parameters(net, 0, 1, length_km, diameter_m,
+                                               alpha_w_per_m2k=alpha)
+        assert net.pipe.u_w_per_m2k.values == alpha
+
+
+def test_namechange_pipes_from_parameters(create_net_3_juncs):
+    net = copy.deepcopy(create_net_3_juncs)
+    length_km = 1
+    diameter_m = 0.01
+    alpha = [5, 3]
+    with pytest.warns(DeprecationWarning):
+        pandapipes.create_pipes_from_parameters(net, [0, 1], [1, 2], length_km, diameter_m,
+                                                alpha_w_per_m2k=alpha)
+        assert net.pipe.u_w_per_m2k.values.tolist() == alpha
+    net = copy.deepcopy(create_net_3_juncs)
+    u = [1, 7]
+    with pytest.warns(DeprecationWarning):
+        pandapipes.create_pipes_from_parameters(net, [0, 1], [1, 2], length_km, diameter_m,
+                                                alpha_w_per_m2k=alpha, u_w_per_m2k=np.array(u))
+        assert net.pipe.u_w_per_m2k.values.tolist() == u

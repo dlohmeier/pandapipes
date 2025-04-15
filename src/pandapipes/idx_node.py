@@ -5,25 +5,30 @@
 # node types
 P = 1  # Reference node, pressure is fixed
 L = 2  # All other nodes
-T = 10  # Reference node with fixed temperature, otherwise 0
-PC = 20  # Controlled node with fixed pressure p
-NONE = 3  # None
+T = 3  # Reference node with fixed temperature, otherwise 0
+PC = 4  # Controlled node with fixed pressure p
 
 # node indices
 TABLE_IDX = 0  # number of the table that this node belongs to
 ELEMENT_IDX = 1  # index of the element that this node belongs to (within the given table)
 NODE_TYPE = 2  # junction type
-ACTIVE = 3
-RHO = 4  # Density in [kg/m^3]
-PINIT = 5
-LOAD = 6  # sink load: mdot_kg_per_s
-HEIGHT = 7
-TINIT = 8
-PAMB = 9  # Ambient pressure in [bar]
-LOAD_T = 10  # Heat power drawn in [W]
-NODE_TYPE_T = 11
-EXT_GRID_OCCURENCE = 12
-EXT_GRID_OCCURENCE_T = 13
-TINIT_OLD = 14
+NODE_TYPE_T = 3
+ACTIVE = 4
+HEIGHT = 5
+PAMB = 6 # Ambient pressure in [bar]
+LOAD = 7
+LOAD_T = 8  # Heat power drawn in [W]
+EXT_GRID_OCCURENCE = 9
+EXT_GRID_OCCURENCE_T = 10
+INFEED = 11
+VAR_MASS_SLACK = 12 #required as slack do not necesseraly allow mass different from zero
 
-node_cols = 15
+PINIT = 13
+MDOTSLACKINIT = 14
+TINIT = 15
+
+JAC_DERIV_MSL = 16
+
+TINIT_OLD = 17
+
+node_cols = 18

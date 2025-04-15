@@ -10,6 +10,8 @@ from numpy import dtype
 
 from pandapipes.component_models.abstract_models.node_models import NodeComponent
 from pandapipes.component_models.component_toolbox import p_correction_height_air
+from pandapipes.idx_node import L, ELEMENT_IDX, PINIT, node_cols, HEIGHT, TINIT, PAMB, \
+    ACTIVE as ACTIVE_ND
 from pandapipes.idx_node import L, ELEMENT_IDX, RHO, PINIT, node_cols, HEIGHT, TINIT, PAMB, \
     ACTIVE as ACTIVE_ND, TINIT_OLD, EXT_GRID_OCCURENCE, EXT_GRID_OCCURENCE_T, LOAD
 from pandapipes.pf.pipeflow_setup import add_table_lookup, get_table_number, \
@@ -93,7 +95,7 @@ class Junction(NodeComponent):
         junction_pit[:, ELEMENT_IDX] = junctions.index.values
         junction_pit[:, HEIGHT] = junctions.height_m.values
         junction_pit[:, PINIT] = junctions.pn_bar.values
-        junction_pit[:, RHO] = get_fluid(net).get_density(junction_pit[:, TINIT])
+        junction_pit[:, TINIT] = junctions.tfluid_k.values
         junction_pit[:, PAMB] = p_correction_height_air(junction_pit[:, HEIGHT])
         junction_pit[:, ACTIVE_ND] = junctions.in_service.values
 
@@ -130,7 +132,7 @@ class Junction(NodeComponent):
         f, t = get_lookup(net, "node", "from_to")[cls.table_name()]
         junction_pit = net["_pit"]["node"][f:t, :]
 
-        if mode in ["hydraulics", "all"]:
+        if mode in ["hydraulics", "sequential", "bidirectional"]:
             junctions_connected_hydraulic = get_lookup(net, "node", "active_hydraulics")[f:t]
 
             if np.any(junction_pit[junctions_connected_hydraulic, PINIT] < 0):
@@ -142,7 +144,7 @@ class Junction(NodeComponent):
         #     if mode == "hydraulics":
         #         res_table["t_k"].values[junctions_connected_hydraulic] = junction_pit[:, TINIT]
         #
-        # if mode in ["heat", "all"]:
+        # if mode in ["heat", "sequential", "bidirectional]:
         #     junctions_connected_ht = get_lookup(net, "node", "active_heat_transfer")[f:t]
         #     res_table["t_k"].values[junctions_connected_ht] = junction_pit[:, TINIT]
         res_table["p_bar"].values[:] = junction_pit[:, PINIT]

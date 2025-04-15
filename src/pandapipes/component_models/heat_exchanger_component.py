@@ -9,7 +9,7 @@ from pandapipes.component_models import standard_branch_wo_internals_result_look
 from pandapipes.component_models.abstract_models.branch_wzerolength_models import \
     BranchWZeroLengthComponent
 from pandapipes.component_models.junction_component import Junction
-from pandapipes.idx_branch import ALPHA, TEXT, QEXT, D, AREA, LOSS_COEFFICIENT as LC, TOUTINIT
+from pandapipes.idx_branch import QEXT, D, AREA, LOSS_COEFFICIENT as LC
 from pandapipes.pf.pipeflow_setup import get_fluid
 from pandapipes.pf.result_extraction import extract_branch_results_without_internals
 
@@ -52,13 +52,8 @@ class HeatExchanger(BranchWZeroLengthComponent):
         :return: No Output.
         """
         heat_exchanger_pit = super().create_pit_branch_entries(net, branch_pit)
-        heat_exchanger_pit[:, D] = net[cls.table_name()].diameter_m.values
-        heat_exchanger_pit[:, AREA] = heat_exchanger_pit[:, D] ** 2 * np.pi / 4
         heat_exchanger_pit[:, LC] = net[cls.table_name()].loss_coefficient.values
-        heat_exchanger_pit[:, ALPHA] = 0
         heat_exchanger_pit[:, QEXT] = net[cls.table_name()].qext_w.values
-        heat_exchanger_pit[:, TEXT] = 293.15
-        heat_exchanger_pit[:, TOUTINIT] = 307
 
     @classmethod
     def adaption_before_derivatives_hydraulic(cls, net, branch_pit, node_pit, idx_lookups, options):
@@ -87,7 +82,6 @@ class HeatExchanger(BranchWZeroLengthComponent):
         extract_branch_results_without_internals(net, branch_results, required_results_hyd,
                                                  required_results_ht, cls.table_name(), mode)
 
-
     @classmethod
     def get_component_input(cls):
         """
@@ -115,12 +109,12 @@ class HeatExchanger(BranchWZeroLengthComponent):
         :rtype: (list, bool)
         """
         if get_fluid(net).is_gas:
-            output = ["v_from_m_per_s", "v_to_m_per_s", "v_mean_m_per_s", "p_from_bar", "p_to_bar",
-                      "t_from_k", "t_to_k", "mdot_from_kg_per_s", "mdot_to_kg_per_s",
+            output = ["p_from_bar", "p_to_bar",
+                      "t_from_k", "t_to_k", "t_outlet_k", "mdot_from_kg_per_s", "mdot_to_kg_per_s",
                       "vdot_norm_m3_per_s", "reynolds", "lambda", "normfactor_from",
                       "normfactor_to", "qext_w"]
         else:
-            output = ["v_mean_m_per_s", "p_from_bar", "p_to_bar", "t_from_k", "t_to_k",
-                      "mdot_from_kg_per_s", "mdot_to_kg_per_s", "vdot_norm_m3_per_s", "reynolds",
+            output = ["p_from_bar", "p_to_bar", "t_from_k", "t_to_k", "t_outlet_k",
+                      "mdot_from_kg_per_s", "mdot_to_kg_per_s", "vdot_m3_per_s", "reynolds",
                       "lambda", "qext_w"]
         return output, True

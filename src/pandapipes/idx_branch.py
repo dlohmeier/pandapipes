@@ -3,46 +3,52 @@
 # Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 
 # branch types
-# no types defined
+CIRC = 1  # Circ pump branch
+PC = 2  # Pressure controller branch
 
 # branch indices
 TABLE_IDX = 0  # number of the table that this branch belongs to
 ELEMENT_IDX = 1  # index of the element that this branch belongs to (within the given table)
-FROM_NODE = 2  # f, from bus number
-TO_NODE = 3  # t, to bus number
-ACTIVE = 4
-LENGTH = 5  # Pipe length in [m]
-D = 6  # Diameter in [m]
-AREA = 7  # Area in [m²]
-RHO = 8  # Density in [kg/m^3
-ETA = 9  # Dynamic viscosity in [Pas]
-K = 10  # Pipe roughness in [m]
-VINIT = 11  # velocity in  [m/s]
-RE = 12 # Reynolds number
-LAMBDA = 13  # Lambda
-JAC_DERIV_DV = 14  # Slot for the derivative by velocity
-JAC_DERIV_DP = 15  # Slot for the derivative by pressure from_node
-JAC_DERIV_DP1 = 16  # Slot for the derivative by pressure to_node
-LOAD_VEC_BRANCHES = 17  # Slot for the load vector for the branches
-JAC_DERIV_DV_NODE = 18  # Slot for the derivative by velocity for the nodes connected to branch
-LOAD_VEC_NODES = 19  # Slot for the load vector of the nodes connected to branch
-LOSS_COEFFICIENT = 20
-CP = 21  # Slot for fluid heat capacity at constant pressure : cp = (J/kg.K)
-ALPHA = 22  # Slot for heat transfer coefficient
-JAC_DERIV_DT = 23 # Slot for the derivative by temperature from_node # df_dt
-JAC_DERIV_DT1 = 24 # Slot for the derivative by temperature to_node # df_dt1
-LOAD_VEC_BRANCHES_T = 25
-TOUTINIT = 26  # Internal slot for outlet pipe temperature
-JAC_DERIV_DT_NODE = 27  # Slot for the derivative fpr T for the nodes connected to branch
-LOAD_VEC_NODES_T = 28
-VINIT_T = 29
-FROM_NODE_T = 30
-TO_NODE_T = 31
-QEXT = 32  # heat input in [W]
-TEXT = 33
-PL = 34  # Pressure lift [bar]
-TL = 35  # Temperature lift [K]
-BRANCH_TYPE = 36  # branch type relevant for the pressure controller
+BRANCH_TYPE = 2  # branch type relevant for the pressure controller
+FROM_NODE = 3  # f, from bus number
+TO_NODE = 4  # t, to bus number
+ACTIVE = 5
+LENGTH = 6  # Pipe length in [m]
+D = 7  # Diameter in [m]
+AREA = 8  # Area in [m²]
+K = 9  # Pipe roughness in [m]
+RE = 10 # Reynolds number
+LAMBDA = 11  # Lambda
+LOSS_COEFFICIENT = 12
+ALPHA = 13  # Slot for heat transfer coefficient
+QEXT = 14  # heat input into the branch [W]
+TEXT = 15 # temperature of surrounding [K]
+PL = 16 # Pressure lift [bar]
+TL = 17 # Temperature lift [K]
+
+MDOTINIT = 18  # mass in  [m/s]
+MDOTINIT_T = 19
+FROM_NODE_T_SWITCHED = 20 # flag to indicate if the from and to node are switched in the thermal calculation
+TOUTINIT = 21  # Internal slot for outlet pipe temperature
+FLOW_RETURN_CONNECT = 22 # Make sure that return and flow side are connected to the central pump, respectively
+
+JAC_DERIV_DM = 23  # Slot for the derivative by mass
+JAC_DERIV_DP = 24  # Slot for the derivative by pressure from_node
+JAC_DERIV_DP1 = 25  # Slot for the derivative by pressure to_node
+JAC_DERIV_DM_NODE = 26  # Slot for the derivative by mass for the nodes connected to branch
+LOAD_VEC_BRANCHES = 27  # Slot for the load vector for the branches
+LOAD_VEC_NODES_FROM = 28  # Slot for the load vector of the from nodes connected to branch
+LOAD_VEC_NODES_TO = 29  # Slot for the load vector of the to nodes connected to branch
+
+JAC_DERIV_DT = 30
+JAC_DERIV_DTOUT = 31
+JAC_DERIV_DT_NODE = 32  # Slot for the node equation derivative of T for the nodes branch is connected to
+JAC_DERIV_DTOUT_NODE = 33  # Slot for the node equation derivative of T for the corresponding branch
+LOAD_VEC_BRANCHES_T = 34
+LOAD_VEC_NODES_FROM_T = 35 # Slot for the load vector of the from nodes connected to branch
+LOAD_VEC_NODES_TO_T = 36 # Slot for the load vector of the to nodes connected to branch
+
+
 PRESSURE_RATIO = 37  # boost ratio for compressors with proportional pressure lift
 T_OUT_OLD = 38
 Kv_max = 39  # dynamic valve flow characteristics

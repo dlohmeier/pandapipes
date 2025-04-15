@@ -6,16 +6,15 @@ import copy
 import os
 
 import numpy as np
+import pandapipes
 import pandapower
 import pandas as pd
 import pytest
 from packaging import version
-
-import pandapipes
 from pandapipes import networks as nw, BranchComponent
 from pandapipes.component_models import NodeComponent
-from pandapipes.idx_node import node_cols
 from pandapipes.idx_branch import branch_cols
+from pandapipes.idx_node import node_cols
 from pandapipes.test.api.test_convert_format import found_versions, folder, minimal_version_two_nets
 
 
@@ -132,7 +131,7 @@ def create_net_changed_indices(base_net_is_wo_pumps):
     net = copy.deepcopy(base_net_is_wo_pumps)
 
     new_junction_indices = [55, 38, 84, 65, 83, 82, 28, 49, 99, 105]
-    new_pipe_indices = [30, 88, 72, 99,  0, 98, 70]
+    new_pipe_indices = [30, 88, 72, 99, 0, 98, 70]
     new_valve_indices = [19]
     new_pump_indices = [93]
     new_hxc_indices = [67]
@@ -258,12 +257,12 @@ def test_select_subnet(base_net_is_wo_pumps):
 
     # check length of results
     net = nw.gas_tcross2()
-    pandapipes.pipeflow(net)
+    max_iter_hyd = 2
+    pandapipes.pipeflow(net, max_iter_hyd=max_iter_hyd)
     net2 = pandapipes.select_subnet(net, net.junction.index[:-3], include_results=True)
     for comp in net.component_list:
         assert len(net2["res_" + comp.table_name()]) == len(net2[comp.table_name()])
     assert len(net.junction) == len(net2.junction) + 3
-
 
 def test_pit_extraction():
     max_ver = max(found_versions)
@@ -275,7 +274,11 @@ def test_pit_extraction():
     for name in names:
         filename = os.path.join(folder, "example_%s%s.json" % (max_ver, name))
         net = pandapipes.from_json(filename)
-        pandapipes.pipeflow(net)
+        if not "_gas" in name:
+            pandapipes.create_ext_grid(net, junction=4, p_bar=6, t_k=290, name="External Grid 2", index=None)
+            pandapipes.create_ext_grid(net, junction=5, p_bar=5, t_k=290, name="External Grid 3")
+        max_iter_hyd = 11 if '_water' in name else 5
+        pandapipes.pipeflow(net, max_iter_hyd=max_iter_hyd)
 
         node_table, branch_table = pandapipes.get_internal_tables_pandas(net)
 
