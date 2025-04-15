@@ -97,8 +97,6 @@ class Junction(NodeComponent):
         junction_pit[:, PAMB] = p_correction_height_air(junction_pit[:, HEIGHT])
         junction_pit[:, ACTIVE_ND] = junctions.in_service.values
 
-
-
     @classmethod
     def extract_results(cls, net, options, branch_results, mode):
         """
@@ -122,7 +120,8 @@ class Junction(NodeComponent):
             # output, all_float = cls.get_result_table(net)
             if "res_internal" not in net:
                 net["res_internal"] = pd.DataFrame(
-                    np.NAN, columns=["t_k"], index=np.arange(len(net["_active_pit"]["node"][:, TINIT])),
+                    np.NAN, columns=["t_k"],
+                    index=np.arange(len(net["_active_pit"]["node"][:, TINIT])),
                     dtype=np.float64
                 )
             net["res_internal"]["t_k"] = net["_active_pit"]["node"][:, TINIT]
@@ -134,8 +133,8 @@ class Junction(NodeComponent):
             junctions_connected_hydraulic = get_lookup(net, "node", "active_hydraulics")[f:t]
 
             if np.any(junction_pit[junctions_connected_hydraulic, PINIT] < 0):
-                warn(UserWarning('Pipeflow converged, however, the results are physically incorrect '
-                                 'as pressure is negative at nodes %s'
+                warn(UserWarning('Pipeflow converged, however, the results are physically incorrect'
+                                 ' as pressure is negative at nodes %s'
                                  % junction_pit[junction_pit[:, PINIT] < 0, ELEMENT_IDX]))
 
         #     res_table["p_bar"].values[junctions_connected_hydraulic] = junction_pit[:, PINIT]
