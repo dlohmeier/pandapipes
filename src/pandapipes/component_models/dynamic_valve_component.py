@@ -11,7 +11,7 @@ from pandapipes.component_models.abstract_models.branch_wzerolength_models impor
 from pandapipes.component_models.component_toolbox import get_component_array, get_std_type_lookup
 from pandapipes.component_models.junction_component import Junction
 from pandapipes.idx_branch import D, AREA, TL, Kv_max, ACTUAL_POS, FROM_NODE, TO_NODE, \
-    RHO, LOSS_COEFFICIENT as LC, DESIRED_MV
+    LOSS_COEFFICIENT as LC, DESIRED_MV
 from pandapipes.idx_node import PINIT, PAMB
 from pandapipes.pf.pipeflow_setup import get_net_option
 from pandapipes.pf.result_extraction import extract_branch_results_without_internals

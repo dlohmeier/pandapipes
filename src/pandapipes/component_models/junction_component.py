@@ -11,13 +11,10 @@ from numpy import dtype
 from pandapipes.component_models.abstract_models.node_models import NodeComponent
 from pandapipes.component_models.component_toolbox import p_correction_height_air
 from pandapipes.idx_node import L, ELEMENT_IDX, PINIT, node_cols, HEIGHT, TINIT, PAMB, \
-    ACTIVE as ACTIVE_ND
-from pandapipes.idx_node import L, ELEMENT_IDX, RHO, PINIT, node_cols, HEIGHT, TINIT, PAMB, \
     ACTIVE as ACTIVE_ND, TINIT_OLD, EXT_GRID_OCCURENCE, EXT_GRID_OCCURENCE_T, LOAD
 from pandapipes.pf.pipeflow_setup import add_table_lookup, get_table_number, \
     get_lookup
 from pandapipes.pf.pipeflow_setup import get_net_option
-from pandapipes.properties.fluids import get_fluid
 
 
 class Junction(NodeComponent):
@@ -124,7 +121,8 @@ class Junction(NodeComponent):
             # output, all_float = cls.get_result_table(net)
             if "res_internal" not in net:
                 net["res_internal"] = pd.DataFrame(
-                    np.NAN, columns=["t_k"], index=np.arange(len(net["_active_pit"]["node"][:, TINIT])),
+                    np.nan, columns=["t_k"], index=np.arange(len(net["_active_pit"]["node"][:,
+                                                               TINIT])),
                     dtype=np.float64
                 )
             net["res_internal"]["t_k"] = net["_active_pit"]["node"][:, TINIT]

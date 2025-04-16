@@ -34,18 +34,12 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 default_options = {"friction_model": "nikuradse", "tol_p": 1e-5, "tol_m": 1e-5,
-                   "tol_T": 1e-3, "tol_res": 1e-3, "max_iter_hyd": 10, "max_iter_therm": 10, "max_iter_bidirect": 10,
-                   "error_flag": False, "alpha": 1,
+                   "tol_T": 1e-3, "tol_res": 1e-3, "max_iter_hyd": 10, "max_iter_therm": 10,
+                   "max_iter_bidirect": 10, "error_flag": False, "alpha": 1,
                    "nonlinear_method": "constant", "mode": "hydraulics",
                    "ambient_temperature": 293.15, "check_connectivity": True,
                    "max_iter_colebrook": 10, "only_update_hydraulic_matrix": False,
                    "reuse_internal_data": False, "use_numba": True,
-                   "quit_on_inconsistency_connectivity": False, "calc_compression_power": True}
-default_options = {"friction_model": "nikuradse", "tol_p": 1e-4, "tol_v": 1e-4,
-                   "tol_T": 1e-3, "tol_res": 1e-3, "iter": 10, "error_flag": False, "alpha": 1,
-                   "nonlinear_method": "constant", "mode": "hydraulics", "ambient_temperature": 293,
-                   "check_connectivity": True, "use_numba": True, "max_iter_colebrook": 100,
-                   "only_update_hydraulic_matrix": False, "reuse_internal_data": False,
                    "quit_on_inconsistency_connectivity": False, "calc_compression_power": True,
                    "transient": False, "simulation_time_step": None, "dt": 60}
 
@@ -514,10 +508,6 @@ def identify_active_nodes_branches(net, hydraulic=True):
 
     :param net: the pandapipes net for which to identify the connectivity
     :type net: pandapipes.pandapipesNet
-    :param branch_pit: Internal array with branch entries
-    :type branch_pit: np.array
-    :param node_pit: Internal array with node entries
-    :type node_pit: np.array
     :param hydraulic: flag for the mode (if True, do the check for the hydraulic simulation, \
         otherwise for the heat transfer simulation with other considerations)
     :type hydraulic: bool, default True
@@ -609,6 +599,9 @@ def check_connectivity(net, branch_pit, node_pit, mode="hydraulics"):
     :type branch_pit: np.array
     :param node_pit: Internal array with node entries
     :type node_pit: np.array
+    :param mode: two modes exist: "hydraulics" and "heat_transfer", representing the two modes of \
+        the pipeflow calculation.
+    :type mode: str
     :return: (nodes_connected, branches_connected) - Lookups of np.arrays stating which of the
             internal nodes and branches are reachable from any of the hyd_slacks (np mask).
     :rtype: tuple(np.array)
@@ -732,10 +725,6 @@ def reduce_pit(net, mode="hydraulics"):
 
     :param net: The pandapipesNet for which the pit shall be reduced
     :type net: pandapipesNet
-    :param node_pit: The internal structure node array
-    :type node_pit: np.array
-    :param branch_pit: The internal structure branch array
-    :type branch_pit: np.array
     :param mode: the mode of the calculation (either "hydraulics" or "heat_transfer") for storing /\
         retrieving correct lookups
     :type mode: str, default "hydraulics"

@@ -8,9 +8,18 @@ from pandapipes.component_models.abstract_models.branch_models import BranchComp
 from pandapipes.component_models.component_toolbox import set_entry_check_repeat, vinterp, \
     p_correction_height_air
 from pandapipes.idx_branch import ACTIVE, FROM_NODE, TO_NODE, ELEMENT_IDX, TOUTINIT
-from pandapipes.idx_node import (L, node_cols, TINIT as TINIT_NODE, HEIGHT, PINIT, PAMB,
-                                 ACTIVE as ACTIVE_ND)
-from pandapipes.pf.pipeflow_setup import add_table_lookup, get_lookup, get_table_number
+from pandapipes.idx_node import (
+    L,
+    node_cols,
+    TINIT as TINIT_NODE,
+    HEIGHT,
+    PINIT,
+    PAMB,
+    ACTIVE as ACTIVE_ND,
+    TINIT_OLD,
+)
+from pandapipes.pf.pipeflow_setup import add_table_lookup, get_lookup, get_table_number, \
+    get_net_option
 
 try:
     import pandaplan.core.pplog as logging
@@ -170,6 +179,14 @@ class BranchWInternalsComponent(BranchComponent):
         int_node_pit[:, PAMB] = p_correction_height_air(int_node_pit[:, HEIGHT])
         int_node_pit[:, ACTIVE_ND] = \
             np.repeat(net[cls.table_name()][cls.active_identifier()].values, int_node_number)
+
+        if not get_net_option(net, "transient") or get_net_option(net, "simulation_time_step") == 0:
+            int_node_pit[:, TINIT_NODE] = vinterp(junction_pit[fj_nodes, TINIT_NODE],
+                                                  junction_pit[tj_nodes, TINIT_NODE],
+                                                  int_node_number)
+            int_node_pit[:, TINIT_OLD] = vinterp(junction_pit[fj_nodes, TINIT_OLD],
+                                                 junction_pit[tj_nodes, TINIT_OLD],
+                                                 int_node_number)
         return table_nr, int_node_number, int_node_pit, junction_pit, fj_nodes, tj_nodes
 
     @classmethod

@@ -12,8 +12,8 @@ from pandapipes.component_models.component_toolbox import get_std_type_lookup, g
 from pandapipes.component_models.junction_component import Junction
 from pandapipes.constants import NORMAL_PRESSURE, R_UNIVERSAL, P_CONVERSION, \
     GRAVITATION_CONSTANT
-from pandapipes.idx_branch import VINIT, D, AREA, TL, LOSS_COEFFICIENT as LC, FROM_NODE, \
-    TOUTINIT, PL, ACTUAL_POS, DESIRED_MV, RHO
+from pandapipes.idx_branch import MDOTINIT, D, AREA, TL, LOSS_COEFFICIENT as LC, FROM_NODE, \
+    TOUTINIT, PL, ACTUAL_POS, DESIRED_MV
 from pandapipes.idx_node import PINIT, PAMB, TINIT as TINIT_NODE
 from pandapipes.pf.pipeflow_setup import get_fluid, get_net_option, get_lookup
 from pandapipes.pf.result_extraction import extract_branch_results_without_internals

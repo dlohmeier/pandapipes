@@ -14,7 +14,7 @@ from pandapipes.component_models.component_toolbox import update_fixed_node_entr
 from pandapipes.component_models.junction_component import Junction
 from pandapipes.constants import P_CONVERSION, GRAVITATION_CONSTANT
 from pandapipes.idx_branch import ACTIVE, TOUTINIT
-from pandapipes.idx_node import PINIT, TINIT as TINIT_NODE, RHO as RHO_node
+from pandapipes.idx_node import PINIT, TINIT as TINIT_NODE
 from pandapipes.pf.pipeflow_setup import get_lookup, get_net_option
 
 try:
@@ -296,6 +296,7 @@ class DynamicCirculationPump(CirculationPump):
         res_table["deltap_bar"].values[in_service] = deltap_bar[in_service]
         res_table["t_from_k"].values[p_grids] = node_pit[return_node, TOUTINIT]
         res_table["t_to_k"].values[p_grids] = node_pit[flow_nodes, TOUTINIT]
+
         res_table["rho"].values[p_grids] = node_pit[return_node, RHO_node]
         res_table["p_lift"].values[p_grids] = circ_pump_tbl.p_lift.values
         res_table["m_head"].values[p_grids] = circ_pump_tbl.m_head.values

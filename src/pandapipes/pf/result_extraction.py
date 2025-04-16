@@ -1,10 +1,9 @@
 import numpy as np
 
 from pandapipes.constants import NORMAL_PRESSURE, NORMAL_TEMPERATURE
-from pandapipes.idx_branch import ELEMENT_IDX, FROM_NODE, TO_NODE, LOAD_VEC_NODES, VINIT, RE, \
-    LAMBDA, FROM_NODE_T, TO_NODE_T, PL, TOUTINIT, DESIRED_MV, ACTUAL_POS, QEXT, LOSS_COEFFICIENT as LC
-from pandapipes.idx_branch import ELEMENT_IDX, FROM_NODE, TO_NODE, MDOTINIT, RE, \
-    LAMBDA, PL, TOUTINIT, AREA, TEXT
+from pandapipes.idx_branch import (DESIRED_MV, ACTUAL_POS, QEXT, LOSS_COEFFICIENT as LC,
+                                   ELEMENT_IDX, FROM_NODE, TO_NODE, MDOTINIT, RE, LAMBDA, PL,
+                                   TOUTINIT, AREA, TEXT)
 from pandapipes.idx_node import TABLE_IDX as TABLE_IDX_NODE, PINIT, PAMB, TINIT as TINIT_NODE
 from pandapipes.pf.internals_toolbox import _sum_by_group
 from pandapipes.pf.pipeflow_setup import get_table_number, get_lookup, get_net_option
@@ -24,8 +23,8 @@ def extract_all_results(net, calculation_mode):
 
     :param net: pandapipes net for which to extract results into net.res_xy
     :type net: pandapipesNet
-    :param net: mode of the simulation (e.g. "hydraulics" or "heat" or "sequential" or "bidirectional")
-    :type net: str
+    :param calculation_mode: mode of the simulation (e.g. "hydraulics" or "heat" or "sequential" or "bidirectional")
+    :type calculation_mode: str
     :return: No output
 
     """
@@ -70,9 +69,9 @@ def get_basic_branch_results(net, branch_pit, node_pit):
                       "vf": vf, "p_from": node_pit[from_nodes, PINIT], "p_to": node_pit[to_nodes, PINIT],
                       "from_nodes": from_nodes, "to_nodes": to_nodes,  "temp_from": t0, "temp_to": t1,
                       "reynolds": branch_pit[:, RE], "lambda": branch_pit[:, LAMBDA], "pl": branch_pit[:, PL],
-                      "t_outlet": t_outlet}
-    branch_pit[:, DESIRED_MV], branch_pit[:, ACTUAL_POS], branch_pit[:, QEXT], \
-        branch_pit[:, LC]
+                      "t_outlet": t_outlet, "desired_mv": branch_pit[:, DESIRED_MV],
+                      "actual_pos": branch_pit[:, ACTUAL_POS], "qext": branch_pit[:, QEXT],
+                      "loss_coeff": branch_pit[:, LC],}
     return branch_results
 
 

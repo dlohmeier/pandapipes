@@ -279,8 +279,12 @@ def add_basic_std_types(net):
 
     """
     pump_files = os.listdir(os.path.join(pp_dir, "std_types", "library", "Pump"))
-    dyn_valve_files = os.listdir(os.path.join(pp_dir, "std_types", "library", "Dynamic_Valve"))
-    dyn_pump_folders = os.listdir(os.path.join(pp_dir, "std_types", "library", "Dynamic_Pump"))
+
+    # currently not working, so dropped for the moment
+    # dyn_valve_files = os.listdir(os.path.join(pp_dir, "std_types", "library", "Dynamic_Valve"))
+    # dyn_pump_folders = os.listdir(os.path.join(pp_dir, "std_types", "library", "Dynamic_Pump"))
+    dyn_valve_files = []
+    dyn_pump_folders = []
 
     for pump_file in pump_files:
         pump_name = str(pump_file.split(".")[0])

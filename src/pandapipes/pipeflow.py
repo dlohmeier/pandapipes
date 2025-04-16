@@ -6,25 +6,16 @@ import numpy as np
 from numpy import linalg
 from scipy.sparse.linalg import spsolve
 
-from pandapipes.idx_branch import ACTIVE as ACTIVE_BR, T_OUT_OLD, FROM_NODE, TO_NODE, FROM_NODE_T, \
-    TO_NODE_T, VINIT, TOUTINIT, VINIT_T
-from pandapipes.idx_node import PINIT, TINIT, TINIT_OLD, ACTIVE as ACTIVE_ND
 from pandapipes.idx_branch import MDOTINIT, TOUTINIT, FROM_NODE_T_SWITCHED
 from pandapipes.idx_node import PINIT, TINIT, MDOTSLACKINIT, NODE_TYPE, P
 from pandapipes.pf.build_system_matrix import build_system_matrix
-from pandapipes.pf.derivative_calculation import calculate_derivatives_hydraulic, \
-    calculate_derivatives_thermal
-from pandapipes.pf.pipeflow_setup import get_net_option, get_net_options, set_net_option, \
-    check_connectivity, init_options, create_internal_results, write_internal_results, get_lookup, \
-    initialize_pit, reduce_pit, set_user_pf_options, init_all_result_tables, \
-    identify_active_nodes_branches, PipeflowNotConverged
 from pandapipes.pf.derivative_calculation import (calculate_derivatives_hydraulic,
                                                   calculate_derivatives_thermal)
 from pandapipes.pf.pipeflow_setup import (
     get_net_option, get_net_options, set_net_option, init_options, create_internal_results,
     write_internal_results, get_lookup, create_lookups, initialize_pit, reduce_pit,
-    set_user_pf_options, init_all_result_tables, identify_active_nodes_branches, check_infeed_number,
-    PipeflowNotConverged
+    set_user_pf_options, init_all_result_tables, identify_active_nodes_branches,
+    check_infeed_number, PipeflowNotConverged
 )
 from pandapipes.pf.result_extraction import extract_all_results, extract_results_active_pit
 
@@ -178,9 +169,9 @@ def bidirectional(net):
     if not get_net_option(net, "reuse_internal_data") or "_internal_data" not in net:
         net["_internal_data"] = dict()
     solver_vars = ['mdot', 'p', 'TOUT', 'T']
-    tol_m, tol_p, tol_T = get_net_options(net, 'tol_m', 'tol_p', 'tol_T')
+    tol_m, tol_p, tol_temp = get_net_options(net, 'tol_m', 'tol_p', 'tol_T')
     newton_raphson(
-        net, solve_bidirectional, 'bidirectional', solver_vars, [tol_m, tol_p, tol_T, tol_T],
+        net, solve_bidirectional, 'bidirectional', solver_vars, [tol_m, tol_p, tol_temp, tol_temp],
         ['branch', 'node', 'branch', 'node'], 'max_iter_bidirect'
     )
     if net.converged:
@@ -209,7 +200,8 @@ def hydraulics(net):
         net.pop("_internal_data", None)
 
     if not net.converged:
-        raise PipeflowNotConverged("The hydraulic calculation did not converge to a solution.")
+        msg = "The hydraulic calculation did not converge to a solution."
+        raise PipeflowNotConverged(msg)
     extract_results_active_pit(net, mode="hydraulics")
 
 
@@ -223,12 +215,12 @@ def heat_transfer(net):
         logger.info("Caution! Temperature calculation does currently not affect hydraulic "
                     "properties!")
     solver_vars = ['Tout', 'T']
-    tol_T = next(get_net_options(net, 'tol_T'))
-    newton_raphson(net, solve_temperature, 'heat', solver_vars, [tol_T, tol_T], ['branch', 'node'],
+    tol_temp = next(get_net_options(net, 'tol_T'))
+    newton_raphson(net, solve_temperature, 'heat', solver_vars, [tol_temp, tol_temp], ['branch', 'node'],
                    'max_iter_therm')
     if not net.converged:
-        raise PipeflowNotConverged("The heat transfer calculation did not converge to a "
-                                   "solution.")
+        msg = "The heat transfer calculation did not converge to a solution."
+        raise PipeflowNotConverged(msg)
     extract_results_active_pit(net, mode="heat_transfer")
 
 
@@ -378,6 +370,7 @@ def finalize_iteration(net, niter, residual_norm, nonlinear_method, errors, tols
             return
     elif nonlinear_method != "constant":
         logger.warning("No proper nonlinear method chosen. Using constant settings.")
+    converged = True
     for error, var, tol in zip(errors.values(), solver_vars, tols):
         converged = error[niter] <= tol
         if not converged: break

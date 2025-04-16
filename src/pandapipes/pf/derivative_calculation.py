@@ -2,18 +2,14 @@ import numpy as np
 
 from pandapipes.constants import NORMAL_TEMPERATURE
 from pandapipes.idx_branch import LENGTH, D, K, RE, LAMBDA, LOAD_VEC_BRANCHES, \
-    JAC_DERIV_DM, JAC_DERIV_DP, JAC_DERIV_DP1, LOAD_VEC_NODES_FROM, LOAD_VEC_NODES_TO, JAC_DERIV_DM_NODE, \
-    FROM_NODE, TO_NODE, TOUTINIT, TEXT, AREA, ALPHA, TL, QEXT, LOAD_VEC_NODES_FROM_T, LOAD_VEC_NODES_TO_T,\
-    LOAD_VEC_BRANCHES_T, JAC_DERIV_DT, JAC_DERIV_DTOUT, JAC_DERIV_DTOUT_NODE, \
-    JAC_DERIV_DT_NODE, MDOTINIT, BRANCH_TYPE, CIRC
-from pandapipes.idx_node import TINIT as TINIT_NODE, INFEED
-from pandapipes.pf.internals_toolbox import get_from_nodes_corrected, get_to_nodes_corrected
-from pandapipes.idx_branch import LENGTH, ETA, RHO, D, K, RE, LAMBDA, LOAD_VEC_BRANCHES, \
-    JAC_DERIV_DV, JAC_DERIV_DP, JAC_DERIV_DP1, LOAD_VEC_NODES, JAC_DERIV_DV_NODE, VINIT, \
-    FROM_NODE, TO_NODE, CP, VINIT_T, FROM_NODE_T, TOUTINIT, TEXT, AREA, ALPHA, TL, QEXT, \
-    LOAD_VEC_NODES_T, \
-    LOAD_VEC_BRANCHES_T, JAC_DERIV_DT, JAC_DERIV_DT1, JAC_DERIV_DT_NODE, T_OUT_OLD
+    JAC_DERIV_DM, JAC_DERIV_DP, JAC_DERIV_DP1, JAC_DERIV_DM_NODE, \
+    FROM_NODE, TO_NODE, TOUTINIT, TEXT, AREA, ALPHA, TL, QEXT, \
+    LOAD_VEC_BRANCHES_T, JAC_DERIV_DT, JAC_DERIV_DT_NODE, T_OUT_OLD
+from pandapipes.idx_branch import LOAD_VEC_NODES_FROM, LOAD_VEC_NODES_TO, LOAD_VEC_NODES_FROM_T, \
+    LOAD_VEC_NODES_TO_T, JAC_DERIV_DTOUT, JAC_DERIV_DTOUT_NODE, MDOTINIT, BRANCH_TYPE, CIRC
+from pandapipes.idx_node import INFEED
 from pandapipes.idx_node import TINIT as TINIT_NODE
+from pandapipes.pf.internals_toolbox import get_from_nodes_corrected, get_to_nodes_corrected
 from pandapipes.pf.pipeflow_setup import get_net_option
 from pandapipes.properties.fluids import get_fluid
 from pandapipes.properties.properties_toolbox import get_branch_real_density, get_branch_real_eta, \
@@ -110,25 +106,25 @@ def calculate_derivatives_thermal(net, branch_pit, node_pit, _):
     alpha = branch_pit[:, ALPHA] * np.pi * branch_pit[:, D]
     tl = branch_pit[:, TL]
     qext = branch_pit[:, QEXT]
-    spec_heat = rho * area * cp
+    no_cp = branch_pit[:, BRANCH_TYPE] != CIRC
+    infeed_node = np.setdiff1d(from_nodes[no_cp], to_nodes[no_cp])
+
+    node_pit[:, INFEED] = False
+    node_pit[infeed_node, INFEED] = True
 
     if get_net_option(net, "transient"):
         tvor = branch_pit[:, T_OUT_OLD]
         delta_t = get_net_option(net, "dt")
 
-        branch_pit[:, LOAD_VEC_BRANCHES_T] = \
-            -(spec_heat * (t_init_i1 - tvor) * (1 / delta_t) * length
-              + spec_heat * v_init * (-t_init_i + t_init_i1 - tl)
-              - alpha * (t_amb - t_init_i1) + qext)
+        branch_pit[:, LOAD_VEC_BRANCHES_T] = (cp * (t_init_i1 - tvor) * (1 / delta_t) * length
+                                              + cp * m_init_i * (-t_init_i + t_init_i1 - tl)
+                                              - alpha * (t_amb - t_init_i1) + qext)
 
-        branch_pit[:, JAC_DERIV_DT] = - spec_heat * v_init
-        branch_pit[:, JAC_DERIV_DT1] = spec_heat / delta_t * length \
-                                                 + spec_heat * v_init + alpha
+        branch_pit[:, JAC_DERIV_DT] = - cp * m_init_i
+        branch_pit[:, JAC_DERIV_DTOUT] = cp / delta_t * length + cp * m_init_i + alpha
     else:
         t_m = (t_init_i1 + t_init_i) / 2
         m_m = (m_init_i + m_init_i1) / 2
-        no_cp = branch_pit[:, BRANCH_TYPE] != CIRC
-        infeed_node = np.setdiff1d(from_nodes[no_cp], to_nodes[no_cp])
 
         branch_pit[:, JAC_DERIV_DT] = - cp * m_m + alpha / 2 * length
         branch_pit[:, JAC_DERIV_DTOUT] = cp * m_m + alpha / 2 * length
@@ -150,8 +146,6 @@ def calculate_derivatives_thermal(net, branch_pit, node_pit, _):
     # cp_n = fluid.get_heat_capacity(t_init)
     # node_pit[:, LOAD_T] = cp_n * node_pit[:, LOAD] * t_init
 
-    node_pit[:, INFEED] = False
-    node_pit[infeed_node, INFEED] = True
 
 
 def get_derived_values(node_pit, from_nodes, to_nodes, use_numba):
@@ -172,8 +166,6 @@ def calc_lambda(m, eta, d, k, gas_mode, friction_model, lengths, options, area):
     :type m:
     :param eta:
     :type eta:
-    :param rho:
-    :type rho:
     :param d:
     :type d:
     :param k:
@@ -230,12 +222,10 @@ def calc_der_lambda(m, eta, d, k, friction_model, lambda_pipe, area):
     on Nikuradse. This should not be a problem as the pressure loss term will equal zero
     (lambda * u^2).
 
-    :param v:
-    :type v:
+    :param m:
+    :type m:
     :param eta:
     :type eta:
-    :param rho:
-    :type rho:
     :param d:
     :type d:
     :param k:
@@ -244,6 +234,8 @@ def calc_der_lambda(m, eta, d, k, friction_model, lambda_pipe, area):
     :type friction_model:
     :param lambda_pipe:
     :type lambda_pipe:
+    :param area:
+    :type area:
     :return:
     :rtype:
     """

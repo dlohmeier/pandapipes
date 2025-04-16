@@ -12,6 +12,8 @@ from pandapipes import logger
 from pandapower.io_utils import JSONSerializableClass
 from scipy.interpolate import interp2d
 
+from scipy.interpolate import RegularGridInterpolator as RGI
+
 try:
     import plotly.graph_objects as go
     PLOTLY_INSTALLED = True
@@ -276,7 +278,10 @@ class DynPumpStdType(RegressionStdType):
             else:
                 interpolate_kind = 'cubic'
 
-            interp2d_fct = interp2d(flow_list, speed_list, head_list, kind=interpolate_kind, fill_value='0')
+            # old code (incompatible with scipy)
+            # interp2d_fct = interp2d(flow_list, speed_list, head_list, kind=interpolate_kind, fill_value='0')
+            interp2d_fct = RGI((flow_list, speed_list), head_list.T, method=interpolate_kind,
+                               bounds_error=False, fill_value=0)
 
             pump_st = cls(name, interp2d_fct)
             pump_st._x_values = flow_list

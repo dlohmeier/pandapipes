@@ -11,11 +11,7 @@ from pandapipes.component_models.component_toolbox import set_entry_check_repeat
 from pandapipes.component_models.junction_component import Junction
 from pandapipes.constants import NORMAL_TEMPERATURE, NORMAL_PRESSURE
 from pandapipes.idx_branch import FROM_NODE, TO_NODE, LENGTH, D, AREA, K, \
-    VINIT, ALPHA, QEXT, TEXT, LOSS_COEFFICIENT as LC, T_OUT_OLD, TOUTINIT
-from pandapipes.idx_node import PINIT, HEIGHT, TINIT as TINIT_NODE, \
-    RHO as RHO_NODES, PAMB, ACTIVE as ACTIVE_ND, TINIT_OLD
-from pandapipes.pf.pipeflow_setup import get_fluid, get_lookup, get_net_option
-    MDOTINIT, ALPHA, QEXT, TEXT, LOSS_COEFFICIENT as LC
+    T_OUT_OLD, TOUTINIT, MDOTINIT, ALPHA, QEXT, TEXT, LOSS_COEFFICIENT as LC
 from pandapipes.idx_node import PINIT, TINIT as TINIT_NODE, PAMB
 from pandapipes.pf.pipeflow_setup import get_fluid, get_lookup, get_net_option
 from pandapipes.pf.result_extraction import extract_branch_results_with_internals, \
@@ -93,38 +89,6 @@ class Pipe(BranchWInternalsComponent):
             internal_nodes_lookup["VINIT"][:, 1] = np.arange(int_pipes_num)
 
         return end, current_table
-
-    @classmethod
-    def create_pit_node_entries(cls, net, node_pit):
-        """
-        Function which creates pit node entries.
-
-        :param net: The pandapipes network
-        :type net: pandapipesNet
-        :param node_pit:
-        :type node_pit:
-        :return: No Output.
-        """
-        table_nr, int_node_number, int_node_pit, junction_pit, fj_nodes, tj_nodes = \
-            super().create_pit_node_entries(net, node_pit)
-        if table_nr is None:
-            return
-        get_lookup(net, "node", "index")
-        int_node_pit[:, HEIGHT] = vinterp(junction_pit[fj_nodes, HEIGHT],
-                                          junction_pit[tj_nodes, HEIGHT], int_node_number)
-        int_node_pit[:, PINIT] = vinterp(junction_pit[fj_nodes, PINIT],
-                                         junction_pit[tj_nodes, PINIT], int_node_number)
-        int_node_pit[:, PAMB] = p_correction_height_air(int_node_pit[:, HEIGHT])
-        int_node_pit[:, RHO_NODES] = get_fluid(net).get_density(int_node_pit[:, TINIT_NODE])
-        int_node_pit[:, ACTIVE_ND] = \
-            np.repeat(net[cls.table_name()][cls.active_identifier()].values, int_node_number)
-        if not get_net_option(net, "transient") or get_net_option(net, "simulation_time_step") == 0:
-            int_node_pit[:, TINIT_NODE] = vinterp(junction_pit[fj_nodes, TINIT_NODE],
-                                                  junction_pit[tj_nodes, TINIT_NODE],
-                                                  int_node_number)
-            int_node_pit[:, TINIT_OLD] = vinterp(junction_pit[fj_nodes, TINIT_OLD],
-                                                 junction_pit[tj_nodes, TINIT_OLD],
-                                                 int_node_number)
 
     @classmethod
     def create_pit_branch_entries(cls, net, branch_pit):
